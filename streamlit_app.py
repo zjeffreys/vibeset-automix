@@ -19,7 +19,10 @@ demo_tracks = {
     "Boom Bap Flick - Quincas Moreira": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/Boom_Bap_Flick_Quincas_Moreira_compressed.mp3",
     "ILY Baby - Dyalla": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/ILY_Baby_Dyalla_compressed.mp3",
     "Fred Again": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/FredAgain.mp3?t=2024-10-17T22%3A03%3A38.358Z",
-    "Da Fonk (feat. Joni)": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/Da%20Fonk%20(feat.%20Joni).mp3?t=2024-10-17T22%3A03%3A55.830Z"
+    "Da Fonk (feat. Joni)": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/Da%20Fonk%20(feat.%20Joni).mp3?t=2024-10-17T22%3A03%3A55.830Z",
+    "Harlem Shake - Build up":"https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/Harlem%20Shake%20-%20Build%20up.mp3?t=2024-12-17T18%3A04%3A02.371Z",
+    "One More Time - Build up":"https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/One%20More%20Time%20-%20Build%20up.mp3",
+
 }
 
 # Function to load audio from a demo track
