@@ -3,11 +3,12 @@ from pydub import AudioSegment
 from io import BytesIO
 import requests
 import librosa
-import soundfile as sf
 import numpy as np
+import matplotlib.pyplot as plt
+import soundfile as sf
 
 # Title of the app
-st.title("🎵 Audio Mixer")
+st.title("\U0001F3B5 Audio Mixer")
 
 # Description of the app
 st.write(
@@ -21,25 +22,27 @@ def load_audio_from_url(url):
     audio_data = requests.get(url).content
     return AudioSegment.from_file(BytesIO(audio_data), format="mp3")
 
-demo_tracks = {
-    "Harlem Shake - Build up": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/Harlem%20Shake%20-%20Build%20up.mp3?t=2024-12-17T18%3A04%3A02.371Z",
-    "One More Time - Build up": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/One%20More%20Time%20-%20Build%20up.mp3",
-    "This Is What It Feels Like - Armin Van Buren": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/This%20Is%20What%20It%20Feels%20Like%20-%20Armin%20Van%20Buren.mp3?t=2024-12-18T18%3A08%3A03.970Z",
-    "Avicii - Faster Than Light ft. Sandro Cavazza (High Quality)": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/Avicii%20-%20Faster%20Than%20Light%20ft.%20Sandro%20Cavazza%20(High%20Quality).mp3?t=2024-12-18T18%3A14%3A14.717Z",
-    "Boom Bap Flick - Quincas Moreira": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/Boom_Bap_Flick_Quincas_Moreira_compressed.mp3",
-    "ILY Baby - Dyalla": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/ILY_Baby_Dyalla_compressed.mp3",
-    "Fred Again": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/FredAgain.mp3?t=2024-10-17T22%3A03%3A38.358Z",
-    "Da Fonk (feat. Joni)": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/Da%20Fonk%20(feat.%20Joni).mp3?t=2024-10-17T22%3A03%3A55.830Z",
-}
+def extract_amplitude_over_time(audio):
+    audio_wav = BytesIO()
+    audio.export(audio_wav, format="wav")
+    audio_wav.seek(0)
+    y, sr = librosa.load(audio_wav, sr=None)
+    frame_size = 2048  # Number of samples per frame
+    hop_length = 512   # Step size between frames
+    rms = librosa.feature.rms(y=y, frame_length=frame_size, hop_length=hop_length)[0]
+    times = librosa.frames_to_time(range(len(rms)), sr=sr, hop_length=hop_length)
+    return times, rms
 
-def load_audio(selection):
-    return load_audio_from_url(demo_tracks[selection])
+def plot_amplitude(times1, amp1, label1, times2, amp2, label2):
+    plt.figure(figsize=(10, 6))
+    plt.plot(times1, amp1, label=label1, color='blue')
+    plt.plot(times2, amp2, label=label2, color='orange')
+    plt.xlabel("Time (s)")
+    plt.ylabel("Amplitude (RMS - Loudness)")
+    plt.title("Amplitude Over Time (Visualizing Beat Drops)")
+    plt.legend()
+    st.pyplot(plt)
 
-def export_audio(audio):
-    output = BytesIO()
-    audio.export(output, format="mp3")
-    output.seek(0)
-    return output.getvalue()
 
 def calculate_bpm(audio):
     audio_wav = BytesIO()
@@ -54,6 +57,12 @@ def calculate_bpm(audio):
             return float(tempo)
     except Exception:
         return None
+
+def export_audio(audio):
+    output = BytesIO()
+    audio.export(output, format="mp3")
+    output.seek(0)
+    return output.getvalue()
 
 def crossfade_audio(file1, file2, start_time, fade_duration):
     start_time_ms = start_time * 1000
@@ -91,7 +100,6 @@ def beatmatch_audio(audio1, audio2):
 
     return final_audio
 
-# testing new push
 def automix_audio(audio1, audio2, start_time, fade_duration_sec=5):
     # Beatmatch first
     bpm1 = calculate_bpm(audio1)
@@ -132,7 +140,19 @@ def automix_audio(audio1, audio2, start_time, fade_duration_sec=5):
 
     return final_audio
 
+demo_tracks = {
+    "Harlem Shake - Build up": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/Harlem%20Shake%20-%20Build%20up.mp3?t=2024-12-17T18%3A04%3A02.371Z",
+    "One More Time - Build up": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/One%20More%20Time%20-%20Build%20up.mp3",
+    "This Is What It Feels Like - Armin Van Buren": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/This%20Is%20What%20It%20Feels%20Like%20-%20Armin%20Van%20Buren.mp3?t=2024-12-18T18%3A08%3A03.970Z",
+    "Avicii - Faster Than Light ft. Sandro Cavazza (High Quality)": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/Avicii%20-%20Faster%20Than%20Light%20ft.%20Sandro%20Cavazza%20(High%20Quality).mp3?t=2024-12-18T18%3A14%3A14.717Z",
+    "Boom Bap Flick - Quincas Moreira": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/Boom_Bap_Flick_Quincas_Moreira_compressed.mp3",
+    "ILY Baby - Dyalla": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/ILY_Baby_Dyalla_compressed.mp3",
+    "Fred Again": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/FredAgain.mp3?t=2024-10-17T22%3A03%3A38.358Z",
+    "Da Fonk (feat. Joni)": "https://eexoqhyrxkhxjvgdbycw.supabase.co/storage/v1/object/public/demo_tracks/Da%20Fonk%20(feat.%20Joni).mp3?t=2024-10-17T22%3A03%3A55.830Z",
+}
 
+def load_audio(selection):
+    return load_audio_from_url(demo_tracks[selection])
 
 selection1 = st.selectbox("Choose the first audio track", list(demo_tracks.keys()))
 audio1 = load_audio(selection1)
@@ -145,6 +165,12 @@ audio2 = load_audio(selection2)
 st.audio(demo_tracks[selection2], format="audio/mp3", start_time=0)
 st.write(f"Length of {selection2} (sec): {len(audio2)/1000:.2f}")
 
+if audio1 and audio2:
+    st.write("### Amplitude Over Time")
+    times1, amp1 = extract_amplitude_over_time(audio1)
+    times2, amp2 = extract_amplitude_over_time(audio2)
+    plot_amplitude(times1, amp1, selection1, times2, amp2, selection2)
+
 mix_option = st.selectbox("Choose the mixing option", ["Automix", "Crossfade", "Beatmatch"])
 
 if mix_option == "Crossfade":
@@ -154,7 +180,6 @@ elif mix_option == "Automix":
     start_time = st.slider("When should the first track begin fading? (seconds)", min_value=5, max_value=60, value=10, step=1)
     fade_duration_sec = st.slider("Fade Duration", min_value=5, max_value=20, value=10, step=1)
 
-# Process
 if audio1 and audio2:
     bpm1 = calculate_bpm(audio1)
     bpm2 = calculate_bpm(audio2)
@@ -176,13 +201,11 @@ if audio1 and audio2:
             "it is faded out at the 60s mark."
         )
 
-    # Calculate final BPM
     final_bpm = calculate_bpm(final_audio)
     final_bpm_info = f"BPM of Final Output: **{final_bpm:.2f}**" if final_bpm else "BPM of Final Output: **Unknown**"
 
     output_audio = export_audio(final_audio)
 
-    # Display info
     st.header("This is the final song!")
     st.write(bpm_info_1)
     st.write(bpm_info_2)
