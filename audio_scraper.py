@@ -4,7 +4,7 @@ import os
 
 # Title and description
 st.title("YouTube Audio Downloader")
-st.write("Enter a YouTube video URL to download the audio and listen to it.")
+st.write("Enter a YouTube video URL to download the audio and listen to it. Need to download chrome extension for this.")
 
 # Input for YouTube URL
 video_url = st.text_input("Enter YouTube Video URL:")
