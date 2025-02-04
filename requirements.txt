@@ -1,1 +1,5 @@
-pytube
+streamlit
+yt-dlpß
+pydub
+requests
+ffmpeg
