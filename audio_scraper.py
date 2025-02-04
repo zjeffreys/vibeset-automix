@@ -3,7 +3,7 @@ from pytube import YouTube
 import os
 
 # Title and description
-st.title("YouTube Audio Downloader")
+st.title("Upload Cookie File From YouTube")
 st.write("Enter a YouTube video URL to download the audio and listen to it. Need to download chrome extension for this.")
 
 # Input for YouTube URL
