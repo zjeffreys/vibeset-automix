@@ -111,7 +111,7 @@ st.title("YouTube Audio Mixer")
 st.subheader("System Check")
 
 # Enforce cookie file upload (no longer optional)
-cookie_file = st.file_uploader("Upload YouTube cookies file:", type=["txt"])
+cookie_file = st.file_uploader("Upload YouTube cookies file (use extension):", type=["txt"])
 if not cookie_file:
     st.error("A valid YouTube cookies file must be uploaded to proceed.")
     st.stop()
