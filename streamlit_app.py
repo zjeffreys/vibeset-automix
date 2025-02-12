@@ -103,6 +103,20 @@ def get_bpm_over_time(audio):
         bpms.append(bpm)
     return times, bpms
 
+# Helper functions to trim silence.
+def trim_leading_silence(sound, silence_thresh=-50.0, chunk_size=10):
+    """Removes silence from the beginning of an AudioSegment."""
+    trim_ms = 0
+    while trim_ms < len(sound) and sound[trim_ms:trim_ms+chunk_size].dBFS < silence_thresh:
+        trim_ms += chunk_size
+    return sound[trim_ms:]
+
+def trim_trailing_silence(sound, silence_thresh=-50.0, chunk_size=10):
+    """Removes silence from the end of an AudioSegment."""
+    reversed_sound = sound.reverse()
+    trimmed_reversed = trim_leading_silence(reversed_sound, silence_thresh, chunk_size)
+    return trimmed_reversed.reverse()
+
 # ------------------------------
 # SYSTEM CHECK (runs before any song input)
 # ------------------------------
@@ -116,10 +130,10 @@ if not cookie_file:
     st.error("A valid YouTube cookies file must be uploaded to proceed.")
     st.stop()
 
-# Get the bytes of the cookie file once and store them (to avoid re-reading issues later)
+# Get the bytes of the cookie file once and store them.
 cookie_data = cookie_file.getvalue()
 
-# Check that the cookie file is valid (i.e. not outdated)
+# Check that the cookie file is valid.
 if not check_cookie_file_validity(cookie_data):
     st.error("Cookie file is outdated or invalid. Please upload a new one.")
     st.stop()
@@ -138,16 +152,14 @@ else:
 # USER INPUT (after the system check passes)
 # ------------------------------
 
-# Depending on the quota state, show different input options.
 if use_direct_link:
     video_url1 = st.text_input("Enter the direct YouTube URL for the first song:")
     video_url2 = st.text_input("Enter the direct YouTube URL for the second song:")
 else:
-    # Input fields for song names
+    # Input fields for song names.
     song_name1 = st.text_input("Enter the first song name:")
     song_name2 = st.text_input("Enter the second song name:")
 
-    # Variables to hold selected video URLs
     video_url1 = ""
     video_url2 = ""
 
@@ -167,7 +179,7 @@ else:
             index = options2.index(selected_video2)
             video_url2 = f"https://www.youtube.com/watch?v={search_results2[index]['id']['videoId']}"
 
-# Helper function to download audio using yt-dlp
+# Helper function to download audio using yt-dlp.
 def download_audio_yt_dlp(video_url, output_dir, filename, cookie_path=None):
     try:
         ydl_opts = {
@@ -190,13 +202,13 @@ def download_audio_yt_dlp(video_url, output_dir, filename, cookie_path=None):
         return None
 
 # ------------------------------
-# AUDIO MIXING AND VISUALIZATION (30s Segments)
+# AUDIO MIXING AND VISUALIZATION (30s Segments with Trimmed Silence)
 # ------------------------------
 if st.button("Mix Audio"):
     if video_url1 and video_url2:
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
-                # Save the uploaded cookie file temporarily using our stored cookie_data
+                # Save the uploaded cookie file temporarily.
                 cookie_path = os.path.join(temp_dir, "cookies.txt")
                 with open(cookie_path, "wb") as f:
                     f.write(cookie_data)
@@ -207,41 +219,44 @@ if st.button("Mix Audio"):
                 if not audio_file1 or not audio_file2:
                     st.error("Failed to download audio from one or both videos.")
                 else:
-                    # Load the full audio files using pydub
+                    # Load the full audio files using pydub.
                     audio1 = AudioSegment.from_file(audio_file1)
                     audio2 = AudioSegment.from_file(audio_file2)
 
-                    # ---- Slice the audio segments ----
+                    # ---- Slice the Audio Segments ----
                     slice_duration = 30000  # 30 seconds in milliseconds
                     if len(audio1) < slice_duration or len(audio2) < slice_duration:
                         st.error("One of the songs is too short for the requested slicing.")
                         st.stop()
 
-                    # Take the last 30 seconds of song1 and first 30 seconds of song2
+                    # Extract the last 30 seconds of song1 and the first 30 seconds of song2.
                     segment1 = audio1[-slice_duration:]
                     segment2 = audio2[:slice_duration]
 
-                    # ---- Pro DJ-Style Crossfade Mixing ----
-                    # Set crossfade duration (e.g., 5 seconds)
+                    # ---- Trim Silence ----
+                    # Remove any trailing silence from segment1 and any leading silence from segment2.
+                    segment1 = trim_trailing_silence(segment1, silence_thresh=-50, chunk_size=10)
+                    segment2 = trim_leading_silence(segment2, silence_thresh=-50, chunk_size=10)
+
+                    # ---- Crossfade Mixing ----
+                    # Set crossfade duration (e.g., 5 seconds).
                     crossfade_duration = 5000  # 5 seconds in milliseconds
-                    # Create a crossfaded mix from the two segments.
                     mixed_audio = segment1.append(segment2, crossfade=crossfade_duration)
 
                     # Export the mixed audio.
                     mixed_file_path = os.path.join(temp_dir, "mixed_audio.mp3")
                     mixed_audio.export(mixed_file_path, format="mp3")
 
-                    st.subheader("Mixed Audio (Last 30s of Song 1 + First 30s of Song 2 with Crossfade)")
+                    st.subheader("Mixed Audio (Trimmed Overlap with Crossfade)")
                     st.audio(mixed_file_path, format="audio/mp3")
 
                     # ---- Visualization ----
-                    # Calculate offset for segment2 (in seconds)
+                    # For visualization, we shift the timeline of segment2 by the overlap offset.
                     offset = (len(segment1) - crossfade_duration) / 1000.0
 
-                    # 1. Loudness Envelope Graph for segments.
+                    # Loudness graph.
                     times1, loud1 = get_loudness_envelope(segment1)
                     times2, loud2 = get_loudness_envelope(segment2)
-                    # Shift the timeline for song2
                     times2_shifted = [t + offset for t in times2]
 
                     fig, ax = plt.subplots(figsize=(10, 4))
@@ -249,11 +264,11 @@ if st.button("Mix Audio"):
                     ax.plot(times2_shifted, loud2, label="Song 2 Loudness")
                     ax.set_xlabel("Time (s)")
                     ax.set_ylabel("Loudness (dBFS)")
-                    ax.set_title("Loudness Overlap (30s Segments)")
+                    ax.set_title("Loudness Overlap (Trimmed Segments with Overlap)")
                     ax.legend()
                     st.pyplot(fig)
 
-                    # 2. BPM Graph for segments.
+                    # BPM graph.
                     times_bpm1, bpms1 = get_bpm_over_time(segment1)
                     times_bpm2, bpms2 = get_bpm_over_time(segment2)
                     times_bpm2_shifted = [t + offset for t in times_bpm2]
@@ -263,7 +278,7 @@ if st.button("Mix Audio"):
                     ax2.plot(times_bpm2_shifted, bpms2, marker='o', linestyle='-', label="Song 2 BPM")
                     ax2.set_xlabel("Time (s)")
                     ax2.set_ylabel("BPM")
-                    ax2.set_title("BPM Overlap (30s Segments)")
+                    ax2.set_title("BPM Overlap (Trimmed Segments with Overlap)")
                     ax2.legend()
                     st.pyplot(fig2)
 
