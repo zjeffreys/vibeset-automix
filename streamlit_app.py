@@ -143,7 +143,7 @@ test_results = search_youtube("YouTube")
 # If no results are returned, assume we hit our quota (or another error occurred)
 if not test_results:
     use_direct_link = True
-    st.warning("YouTube Data API quota might have been exceeded. For now, please provide direct YouTube URLs.")
+    st.warning("YouTube Data API quota has been exceeded so can't do song-url lookup. For now, please provide direct YouTube URLs.")
 else:
     use_direct_link = False
     st.success("System Check Passed: YouTube Data API and cookie file are working correctly.")
