@@ -240,7 +240,7 @@ if st.button("Mix Audio"):
 
                     # ---- Crossfade Mixing ----
                     # Set crossfade duration (e.g., 5 seconds).
-                    crossfade_duration = 5000  # 5 seconds in milliseconds
+                    crossfade_duration = 15000  # 5 seconds in milliseconds
                     mixed_audio = segment1.append(segment2, crossfade=crossfade_duration)
 
                     # Export the mixed audio.
