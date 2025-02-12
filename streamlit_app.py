@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import librosa
 
+# TODO propose how we could integrate generative ai.
+
 # YouTube Data API key from Streamlit secrets
 YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
 
